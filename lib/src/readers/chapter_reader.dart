@@ -81,15 +81,15 @@ class ChapterReader {
 
     // Track which spine items are handled by NCX
     final handledSpineItems = <String>{};
-    // Track content files to prevent duplicates (ignoring anchors)
-    final seenContentFiles = <String>{};
+    // Track content references (file + anchor) to prevent duplicates
+    final seenContentRefs = <String>{};
 
     // Build NCX structure without orphan handling (orphans will be standalone)
     final ncxChapters = <EpubChapterRef>[];
 
     for (var navPoint in navPoints) {
       final chapter = _processNavPoint(
-          bookRef, navPoint, handledSpineItems, seenContentFiles);
+          bookRef, navPoint, handledSpineItems, seenContentRefs);
       if (chapter != null) {
         ncxChapters.add(chapter);
       }
@@ -156,8 +156,8 @@ class ChapterReader {
   /// Orphaned items will be handled separately as standalone chapters.
   static EpubChapterRef? _processNavPoint(EpubBookRef bookRef,
       EpubNavigationPoint navPoint, Set<String> handledSpineItems,
-      [Set<String>? seenContentFiles]) {
-    seenContentFiles ??= <String>{};
+      [Set<String>? seenContentRefs]) {
+    seenContentRefs ??= <String>{};
     String? contentFileName;
     String? anchor;
     if (navPoint.content?.source == null) return null;
@@ -174,11 +174,15 @@ class ChapterReader {
     }
     contentFileName = Uri.decodeFull(contentFileName!);
 
-    // Check if we've already processed this base file (ignore anchors for duplicate detection)
-    if (seenContentFiles.contains(contentFileName)) {
+    // Create a unique key for this content reference (file + anchor)
+    // This allows same file with different anchors to be processed as separate chapters
+    final contentKey = anchor != null ? '$contentFileName#$anchor' : contentFileName;
+
+    // Check if we've already processed this exact content reference
+    if (seenContentRefs.contains(contentKey)) {
       return null;
     }
-    seenContentFiles.add(contentFileName);
+    seenContentRefs.add(contentKey);
 
     if (!bookRef.content!.html.containsKey(contentFileName)) {
       throw Exception(
@@ -193,7 +197,7 @@ class ChapterReader {
     final subChapters = <EpubChapterRef>[];
     for (var childNavPoint in navPoint.childNavigationPoints) {
       final childChapter = _processNavPoint(
-          bookRef, childNavPoint, handledSpineItems, seenContentFiles);
+          bookRef, childNavPoint, handledSpineItems, seenContentRefs);
       if (childChapter != null) {
         subChapters.add(childChapter);
       }

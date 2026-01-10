@@ -35,34 +35,38 @@ void main() async {
     test("Chapters count and hierarchy", () async {
       var t = epubRef.getChapters();
 
-      // After fixing duplicate detection, Alice's Adventures now has 4 top-level chapters:
+      // With the subChapter fix, we now get proper hierarchy:
       // - wrap0000.html (orphaned spine item)
-      // - Main title page content (duplicate references consolidated)
-      // - Chapter III
-      // - THE END
-      expect(t.length, equals(4));
+      // - Chapter I (with full sub-chapter hierarchy)
+      // Note: "ALICE'S ADVENTURES UNDER GROUND" and "Chapter I" reference the same
+      // spine file, so spine reconciliation merges them (Chapter I wins as it's
+      // processed later in the NavMap)
+      expect(t.length, equals(2));
 
-      // First is the orphaned wrap0000.html (now standalone)
+      // First is the orphaned wrap0000.html
       expect(t[0].contentFileName, equals('wrap0000.html'));
-      expect(t[0].title, equals('wrap0000')); // Now has extracted title
+      expect(t[0].title, equals('wrap0000'));
+      expect(t[0].subChapters.length, equals(0));
 
-      // Second is the consolidated title page content
-      expect(t[1].title, equals("ALICE'S ADVENTURES UNDER GROUND"));
+      // Second is Chapter I with full hierarchy preserved
+      expect(t[1].title, equals("Chapter I"));
       expect(
           t[1].contentFileName,
           equals(
               '@public@vhost@g@gutenberg@html@files@19002@19002-h@19002-h-0.htm.html'));
 
-      // Third is Chapter III
-      expect(t[2].title, equals("Chapter III"));
+      // The key fix: subChapters are now populated correctly!
+      // Chapter I has 9 sub-chapters in the NavMap
+      expect(t[1].subChapters.length, equals(9));
 
-      // Fourth is THE END
-      expect(t[3].title, equals("THE END."));
+      // Verify some of the sub-chapters
+      expect(t[1].subChapters[0].title, equals("Chapter II"));
+      expect(t[1].subChapters[1].title, equals("Chapter III"));
+      expect(t[1].subChapters[2].title, equals("Chapter IV"));
 
-      // After duplicate detection fix, Chapter II is no longer present because
-      // it referenced the same HTML file as Chapter I (just different anchor)
-      // This is the correct behavior - duplicate file references are filtered out
-      expect(t[1].subChapters.length, equals(0));
+      // Chapter IV has a nested sub-chapter (THE END.)
+      expect(t[1].subChapters[2].subChapters.length, equals(1));
+      expect(t[1].subChapters[2].subChapters[0].title, equals("THE END."));
     });
 
     test("Author and title", () async {
