@@ -7,6 +7,7 @@ import 'package:epub_pro/src/schema/opf/epub_version.dart';
 import 'package:xml/xml.dart' as xml;
 import 'package:path/path.dart' as path;
 
+import '../utils/safe_xml.dart';
 import '../zip/lazy_archive_file.dart';
 
 import '../schema/navigation/epub_metadata.dart';
@@ -68,7 +69,8 @@ class NavigationReader {
         tocContent = convert.utf8.decode(tocFileEntry.content);
       }
 
-      var containerDocument = xml.XmlDocument.parse(tocContent);
+      // F-EPUB-008: NCX parsing — pre-scan for DOCTYPE/ENTITY.
+      var containerDocument = parseXmlSafe(tocContent);
 
       const ncxNamespace = 'http://www.daisy.org/z3986/2005/ncx/';
       final ncxNode = containerDocument
@@ -178,7 +180,8 @@ class NavigationReader {
         tocContent2 = convert.utf8.decode(tocFileEntry.content);
       }
 
-      var containerDocument = xml.XmlDocument.parse(tocContent2);
+      // F-EPUB-008: EPUB3 nav-doc parsing — pre-scan for DOCTYPE/ENTITY.
+      var containerDocument = parseXmlSafe(tocContent2);
 
       final headNode = containerDocument.findAllElements('head').firstOrNull;
       if (headNode == null) {

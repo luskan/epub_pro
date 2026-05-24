@@ -5,6 +5,7 @@ import 'dart:convert' as convert;
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:xml/xml.dart' as xml;
 
+import '../utils/safe_xml.dart';
 import '../zip/lazy_archive_file.dart';
 
 class RootFilePathReader {
@@ -25,11 +26,13 @@ class RootFilePathReader {
       containerContent = convert.utf8.decode(containerFileEntry.content);
     }
 
-    var containerDocument = xml.XmlDocument.parse(containerContent);
+    // F-EPUB-008: pre-scan rejects DOCTYPE/ENTITY before parsing —
+    // `package:xml` has no built-in entity-expansion cap.
+    var containerDocument = parseXmlSafe(containerContent);
     var packageElement = containerDocument
         .findAllElements('container',
             namespace: 'urn:oasis:names:tc:opendocument:xmlns:container')
-        .firstWhereOrNull((xml.XmlElement? elem) => elem != null);
+        .firstOrNull;
     if (packageElement == null) {
       throw Exception('EPUB parsing error: Invalid epub container');
     }

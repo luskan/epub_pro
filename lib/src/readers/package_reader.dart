@@ -5,6 +5,7 @@ import 'dart:convert' as convert;
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:xml/xml.dart';
 
+import '../utils/safe_xml.dart';
 import '../zip/lazy_archive_file.dart';
 
 import '../schema/opf/epub_guide.dart';
@@ -356,7 +357,8 @@ class PackageReader {
       rootFileContent = convert.utf8.decode(rootFileEntry.content);
     }
 
-    var containerDocument = XmlDocument.parse(rootFileContent);
+    // F-EPUB-008: pre-scan rejects DOCTYPE/ENTITY before parsing.
+    var containerDocument = parseXmlSafe(rootFileContent);
     var opfNamespace = 'http://www.idpf.org/2007/opf';
     var packageNode = containerDocument
         .findElements('package', namespace: opfNamespace)
