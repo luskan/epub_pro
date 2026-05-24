@@ -482,11 +482,10 @@ class NavigationReader {
         case 'value':
           value = attributeValue;
         case 'type':
-          var converter = EnumFromString<EpubNavigationPageTargetType>(
+          final converter = EnumFromString<EpubNavigationPageTargetType>(
             EpubNavigationPageTargetType.values,
           );
-          var type = converter.get(attributeValue);
-          type = type;
+          type = converter.get(attributeValue);
         case 'class':
           classs = attributeValue;
         case 'playorder':
@@ -511,8 +510,7 @@ class NavigationReader {
               readNavigationLabel(navigationPageTargetChildNode);
           navigationLabels.add(navigationLabel);
         case 'content':
-          var content = readNavigationContent(navigationPageTargetChildNode);
-          content = content;
+          content = readNavigationContent(navigationPageTargetChildNode);
       }
     });
     if (navigationLabels.isEmpty) {
